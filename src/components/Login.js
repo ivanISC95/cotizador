@@ -1,7 +1,9 @@
-import React,{useRef} from 'react';
+import React,{useRef,useState} from 'react';
 import '../css/login.css';
 import logo from '../img/Caja-Negra-LOGO.png';
-const URL_LOGIN  = "http://localhost:8083/cotizador/login.php"
+
+const URL_LOGIN  = "http://localhost:8083/cotizador/login.php";
+
 const enviarData = async (url, data) =>{
     const resp = await fetch(url, {
         method: 'POST',
@@ -10,19 +12,34 @@ const enviarData = async (url, data) =>{
             'Content-Type':'application/json'
         }
     });
+    console.log(resp);
+    const json =  await resp.json();
+    console.log(json);
+    return json;
 }
 
 export default function Login(props) {
+    // estados de error
+    const [error,setError] = useState(null);
+    // Estado de espera del boton de acceder
+    const [espera, setEspera] = useState(false);
     // OBTENCION DE DATOS
     const refUsuario = useRef(null);
     const refClave = useRef(null);
-    const handleLogin = () => {
+
+    const handleLogin = async () => {
+        // estado del boton
+        setEspera(true);
         const data = {
             "usuario": refUsuario.current.value,
             "clave": refClave.current.value
         };
-        console.log(data); 
-        enviarData(URL_LOGIN,data);
+        // console.log(data); 
+        const respuestaJson  = await enviarData(URL_LOGIN,data);
+        console.log("respuesta desde el evento", respuestaJson);
+        props.acceder(respuestaJson.conectado);
+        setError(respuestaJson.Error);
+        setEspera(false);
     }
     return (
         // CONSTRUCCION DEL LOGIN PRINCIPAL
@@ -64,7 +81,13 @@ export default function Login(props) {
                                 />
                             </div>
                             <div className="text-center">
-                            <button onClick = {handleLogin} className = "btn btn-info btn-lg btn-block align-center">Acceder</button>
+                                {
+                                    error &&
+                                    <div className = "alert alert-danger">{error}</div>                        
+                                }                            
+                            <button onClick = {handleLogin} 
+                            disabled = {espera}
+                            className = "btn btn-info btn-lg btn-block align-center">Acceder</button>
                             </div>                            
                         </div>
                     </div>
